@@ -20,6 +20,7 @@ export const useAIVoice = () => {
   };
 
   const speak = async (text: string, lang = "en-US") => {
+    console.log("satya",text);
     if (!text) return;
 
     // 🔥 HARD RESET

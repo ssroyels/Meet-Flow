@@ -3,12 +3,10 @@
 import Image from "next/image";
 import Link from "next/link";
 import { CallControls, SpeakerLayout } from "@stream-io/video-react-sdk";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AIBotTile } from "./ai-bot-tile";
 import { useAIVoice } from "./use-ai-voice";
 import { useSpeechInput } from "./use-ap-speech";
-import { Button } from "@/components/ui/button";
-import { Mic } from "lucide-react";
 
 interface Props {
   meetingName: string;
@@ -27,13 +25,10 @@ export const CallActive = ({
 }: Props) => {
   const { speak } = useAIVoice();
   const [aiSpeaking, setAiSpeaking] = useState(false);
-  const [loading, setLoading] = useState(false);
-
-  // 🔑 IMPORTANT: unlock only once
   const audioUnlockedRef = useRef(false);
 
   /* ------------------------------------------------------------ */
-  /* 🔓 UNLOCK SPEECH (MANDATORY)                                 */
+  /* 🔓 UNLOCK SPEECH (ONCE)                                      */
   /* ------------------------------------------------------------ */
   const unlockSpeech = () => {
     if (audioUnlockedRef.current) return;
@@ -47,44 +42,47 @@ export const CallActive = ({
   };
 
   /* ------------------------------------------------------------ */
-  /* SEND TEXT → GEMINI                                           */
+  /* SEND TEXT → AI → SPEAK                                       */
   /* ------------------------------------------------------------ */
   const sendToAI = async (text: string) => {
-    setLoading(true);
+    try {
+      const res = await fetch("/api/ai/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text, meetingName, meetingId }),
+      });
 
-    const res = await fetch("/api/ai/chat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        text,
-        meetingName,
-        meetingId,
-      }),
-    });
+      const data = await res.json();
+      if (!data?.textdata) return;
 
-    const data = await res.json();
-    console.log("🤖 AI RESPONSE:", data);
-    setLoading(false);
+      // 🔥 force audio channel open
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.resume();
 
-    if (!data?.text) return;
+      setAiSpeaking(true);
+      speak(data.textdata, "en-US");
 
-    // 🔥 FORCE reset + speak
-    window.speechSynthesis.cancel();
-    window.speechSynthesis.resume();
-
-    setAiSpeaking(true);
-    speak(data.text, "en-US");
-
-    setTimeout(
-      () => setAiSpeaking(false),
-      Math.min(6000, data.text.length * 60)
-    );
+      setTimeout(
+        () => setAiSpeaking(false),
+        Math.min(8000, data.textdata.length * 70)
+      );
+    } catch (err) {
+      console.error("AI Error:", err);
+    }
   };
 
   /* ------------------------------------------------------------ */
-  /* USER SPEECH INPUT                                            */
+  /* 🎤 USER SPEECH INPUT (AUTO)                                  */
   /* ------------------------------------------------------------ */
   const { startListening } = useSpeechInput(sendToAI);
+
+  /* ------------------------------------------------------------ */
+  /* 🚀 AUTO START ON CALL JOIN                                   */
+  /* ------------------------------------------------------------ */
+  useEffect(() => {
+    unlockSpeech();
+    startListening(); // 🎤 auto mic listening
+  }, []);
 
   return (
     <div className="relative flex flex-col justify-between p-4 h-full text-white">
@@ -108,19 +106,6 @@ export const CallActive = ({
 
       {/* CONTROLS */}
       <div className="flex items-center gap-4 bg-[#101213] rounded-full px-4 py-2 justify-center">
-        <Button
-          onClick={() => {
-            unlockSpeech();   // 🔑 REQUIRED
-              window.speechSynthesis.resume();
-            startListening(); // 🎤 Speech → text
-          }}
-          disabled={loading}
-          className="rounded-full"
-        >
-          <Mic className="mr-2 size-4" />
-          {loading ? "Listening…" : "Talk to AI"}
-        </Button>
-
         <CallControls onLeave={onLeave} />
       </div>
     </div>
