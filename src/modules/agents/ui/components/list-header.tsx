@@ -17,7 +17,7 @@ import { useAgentsFilters } from "../../hooks/use-agents-filters";
 import { SearchFilter } from "./agents-filters";
 import { DEFAULT_PAGE } from "@/constants";
 import { Badge } from "@/components/ui/badge";
-
+import { cn } from "@/lib/utils";
 
 export const ListHeader = () => {
   const [filters, setFilters] = useAgentsFilters();

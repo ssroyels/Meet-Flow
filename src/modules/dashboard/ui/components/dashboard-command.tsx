@@ -69,7 +69,7 @@ export const DashboardCommand = ({ open, setOpen }: Props) => {
             <div className="p-3 rounded-full bg-muted">
                <Search className="size-6 text-muted-foreground" />
             </div>
-            <p className="text-sm text-muted-foreground">No results found for search</p>
+            <p className="text-sm text-muted-foreground">No results found for "search"</p>
           </div>
         </CommandEmpty>
 

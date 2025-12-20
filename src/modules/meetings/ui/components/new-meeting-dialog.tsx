@@ -2,54 +2,35 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
-import type { LucideIcon } from "lucide-react";
-
-import {
-  Sparkles,
-  ShieldCheck,
-  Zap,
-  ArrowRight,
-  MonitorCheck,
-} from "lucide-react";
-
 import { ResponsiveDialog } from "@/components/ui/responsive-dialog";
 import { MeetingForm } from "./meeting-form";
+import { 
+  Sparkles, 
+  ShieldCheck, 
+  Zap, 
+  ArrowRight,
+  MonitorCheck
+} from "lucide-react";
 import { cn } from "@/lib/utils";
-
-/* =============================================================================
-   TYPES
-============================================================================= */
+import { motion, AnimatePresence } from "framer-motion";
 
 interface NewMeetingDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-interface StepItemProps {
-  icon: LucideIcon;
-  label: string;
-  active?: boolean;
-}
-
-/* =============================================================================
-   MAIN COMPONENT
-============================================================================= */
-
-export const NewMeetingDialog = ({
-  open,
-  onOpenChange,
-}: NewMeetingDialogProps) => {
+export const NewMeetingDialog = ({ open, onOpenChange }: NewMeetingDialogProps) => {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Success Handler with a "Premium Transition"
   const handleSuccess = (id?: string) => {
     setIsSubmitting(true);
-
+    
+    // Thoda delay for the user to feel the "Success" state
     setTimeout(() => {
       onOpenChange(false);
       setIsSubmitting(false);
-
       if (id) {
         router.push(`/meetings/${id}`);
       }
@@ -58,23 +39,21 @@ export const NewMeetingDialog = ({
 
   return (
     <ResponsiveDialog
-      title="Initialize Meeting"
+      // Custom Title with Icon
+      title={
+        <div className="flex items-center gap-2">
+          <div className="p-1.5 rounded-lg bg-primary/10">
+            <Sparkles className="size-4 text-primary animate-pulse" />
+          </div>
+          <span className="font-black tracking-tight">Initialize Meeting</span>
+        </div>
+      }
       description="Deploy a new AI-powered session to your neural network."
       open={open}
       onOpenChange={onOpenChange}
     >
-      {/* CUSTOM HEADER (JSX moved here safely) */}
-      <div className="flex items-center gap-2 mb-6">
-        <div className="p-1.5 rounded-lg bg-primary/10">
-          <Sparkles className="size-4 text-primary animate-pulse" />
-        </div>
-        <span className="font-black tracking-tight text-lg">
-          Initialize Meeting
-        </span>
-      </div>
-
       <div className="relative overflow-hidden p-1">
-        {/* STEP INDICATOR */}
+        {/* PROGRESS STEP INDICATOR (Extra Feature) */}
         <div className="flex items-center justify-between mb-8 px-2">
           <StepItem icon={ShieldCheck} label="Identity" active />
           <div className="h-px flex-1 bg-border mx-4 mt-[-10px]" />
@@ -83,10 +62,10 @@ export const NewMeetingDialog = ({
           <StepItem icon={MonitorCheck} label="Launch" />
         </div>
 
-        {/* SUCCESS OVERLAY */}
+        {/* OVERLAY LOADER (Visible on Success) */}
         <AnimatePresence>
           {isSubmitting && (
-            <motion.div
+            <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -94,42 +73,32 @@ export const NewMeetingDialog = ({
             >
               <div className="relative">
                 <div className="size-16 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
-                <Sparkles className="absolute inset-0 m-auto size-6 text-primary" />
+                <Sparkles className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 size-6 text-primary" />
               </div>
-
-              <p className="mt-4 font-black text-lg animate-bounce">
-                Deploying Session...
-              </p>
-              <p className="text-sm text-muted-foreground">
-                Redirecting to meeting dashboard
-              </p>
+              <p className="mt-4 font-black text-lg animate-bounce">Deploying Session...</p>
+              <p className="text-sm text-muted-foreground">Redirecting to meeting dashboard</p>
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* FORM */}
-        <div
-          className={cn(
-            "transition-all duration-500",
-            isSubmitting
-              ? "blur-md scale-95 opacity-50"
-              : "opacity-100"
-          )}
-        >
+        {/* FORM WRAPPER */}
+        <div className={cn(
+          "transition-all duration-500",
+          isSubmitting ? "blur-md scale-95 opacity-50" : "opacity-100"
+        )}>
           <MeetingForm
             onSuccess={handleSuccess}
             onCancel={() => onOpenChange(false)}
           />
         </div>
 
-        {/* FOOTER NOTE */}
+        {/* FOOTER HINT (Extra Feature) */}
         <div className="mt-6 p-3 rounded-xl bg-muted/30 border border-dashed border-border flex items-center gap-3">
           <div className="size-8 rounded-full bg-background flex items-center justify-center border shadow-sm">
             <ArrowRight className="size-4 text-muted-foreground" />
           </div>
           <p className="text-[11px] text-muted-foreground leading-relaxed">
-            By creating this meeting, you agree to allocate AI resources for
-            real-time transcription and analysis.
+            By creating this meeting, you agree to allocate AI resources for real-time transcription and analysis.
           </p>
         </div>
       </div>
@@ -137,32 +106,22 @@ export const NewMeetingDialog = ({
   );
 };
 
-/* =============================================================================
-   STEP ITEM
-============================================================================= */
-
-function StepItem({ icon: Icon, label, active = false }: StepItemProps) {
+/* --- SUB-COMPONENT: STEP ITEM --- */
+function StepItem({ icon: Icon, label, active }: { icon: any, label: string, active?: boolean }) {
   return (
     <div className="flex flex-col items-center gap-1.5">
-      <div
-        className={cn(
-          "size-8 rounded-xl flex items-center justify-center transition-all duration-500",
-          active
-            ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20 scale-110"
-            : "bg-muted text-muted-foreground opacity-50"
-        )}
-      >
+      <div className={cn(
+        "size-8 rounded-xl flex items-center justify-center transition-all duration-500",
+        active 
+          ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20 scale-110" 
+          : "bg-muted text-muted-foreground opacity-50"
+      )}>
         <Icon className="size-4" />
       </div>
-
-      <span
-        className={cn(
-          "text-[10px] font-bold uppercase tracking-tighter",
-          active ? "text-primary" : "text-muted-foreground"
-        )}
-      >
-        {label}
-      </span>
+      <span className={cn(
+        "text-[10px] font-bold uppercase tracking-tighter",
+        active ? "text-primary" : "text-muted-foreground"
+      )}>{label}</span>
     </div>
   );
 }

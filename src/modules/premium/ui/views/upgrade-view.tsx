@@ -158,7 +158,7 @@ export const UpgradeViewError = () => (
         </div>
         <h2 className="text-xl font-bold">Something went wrong</h2>
         <p className="text-muted-foreground max-w-xs mx-auto">
-            We could not load the pricing plans. Please refresh or try again later.
+            We couldn't load the pricing plans. Please refresh or try again later.
         </p>
     </div>
   </div>

@@ -32,7 +32,7 @@ export const columns: ColumnDef<AgentGetMany[number]>[] = [
           <div className="relative group">
             <div className="absolute -inset-1 bg-gradient-to-r from-primary to-blue-600 rounded-lg blur opacity-20 group-hover:opacity-40 transition" />
             <GeneratedAvatar
-              // variant="botttsNeutral"
+              variant="botttsNeutral"
               seed={row.original.name}
               className="size-9 relative rounded-lg border bg-background shadow-sm"
             />
@@ -106,7 +106,7 @@ export const columns: ColumnDef<AgentGetMany[number]>[] = [
   },
   {
     id: "actions",
-    cell: ({ }) => (
+    cell: ({ row }) => (
       <div className="flex justify-end pr-2">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
