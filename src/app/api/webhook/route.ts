@@ -10,6 +10,29 @@ import { and, eq } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 
 /* -------------------------------------------------------------------------- */
+/* TYPES                                                                      */
+/* -------------------------------------------------------------------------- */
+type StreamWebhookPayload = {
+  type?: string;
+  call?: {
+    custom?: {
+      meetingId?: string;
+    };
+  };
+  call_cid?: string;
+  call_transcription?: {
+    url?: string;
+  };
+  user?: {
+    id?: string;
+  };
+  channel_id?: string;
+  message?: {
+    text?: string;
+  };
+};
+
+/* -------------------------------------------------------------------------- */
 /* VERIFY STREAM SIGNATURE                                                     */
 /* -------------------------------------------------------------------------- */
 function verifySignature(body: string, signature: string) {
@@ -33,20 +56,21 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
   }
 
-  let payload: any;
+  let payload: StreamWebhookPayload;
+
   try {
-    payload = JSON.parse(body);
+    payload = JSON.parse(body) as StreamWebhookPayload;
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const eventType = payload?.type;
+  const eventType = payload.type;
 
   /* ------------------------------------------------------------------------ */
   /* CALL START                                                                */
   /* ------------------------------------------------------------------------ */
   if (eventType === "call.session_started") {
-    const meetingId = payload?.call?.custom?.meetingId;
+    const meetingId = payload.call?.custom?.meetingId;
     if (!meetingId) return NextResponse.json({ status: "ok" });
 
     await db
@@ -61,7 +85,7 @@ export async function POST(req: NextRequest) {
   /* CALL ENDED                                                                */
   /* ------------------------------------------------------------------------ */
   if (eventType === "call.session_ended") {
-    const meetingId = payload?.call?.custom?.meetingId;
+    const meetingId = payload.call?.custom?.meetingId;
     if (!meetingId) return NextResponse.json({ status: "ok" });
 
     await db
@@ -76,8 +100,8 @@ export async function POST(req: NextRequest) {
   /* TRANSCRIPTION READY                                                       */
   /* ------------------------------------------------------------------------ */
   if (eventType === "call.transcription_ready") {
-    const meetingId = payload?.call_cid?.split(":")?.[1];
-    const transcriptUrl = payload?.call_transcription?.url;
+    const meetingId = payload.call_cid?.split(":")?.[1];
+    const transcriptUrl = payload.call_transcription?.url;
 
     if (!meetingId || !transcriptUrl) {
       return NextResponse.json({ status: "ok" });
@@ -106,9 +130,9 @@ export async function POST(req: NextRequest) {
   /* CHAT → GEMINI                                                             */
   /* ------------------------------------------------------------------------ */
   if (eventType === "message.new") {
-    const userId = payload?.user?.id;
-    const channelId = payload?.channel_id;
-    const text = payload?.message?.text;
+    const userId = payload.user?.id;
+    const channelId = payload.channel_id;
+    const text = payload.message?.text;
 
     if (!userId || !channelId || !text) {
       return NextResponse.json({ status: "ok" });
@@ -153,9 +177,8 @@ ${text}
 `;
 
     const result = await geminiModel.generateContent(prompt);
-    
     const reply = result.response.text();
-    console.log(reply)
+
     if (!reply) return NextResponse.json({ status: "ok" });
 
     const avatarUrl = generateAvatarUri({
@@ -181,4 +204,3 @@ ${text}
 
   return NextResponse.json({ status: "ok" });
 }
-

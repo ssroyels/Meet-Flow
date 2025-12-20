@@ -2,26 +2,49 @@
 
 import { useMeetingsFilters } from "../../hooks/use-meetings-filters";
 import { MeetingStatus } from "../../types";
+import type { LucideIcon } from "lucide-react";
+
 import {
   Clock,
   CheckCircle,
   XCircle,
   Sparkles,
   Loader2,
-  Filter,
   X,
 } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
-import { motion, AnimatePresence } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
+import { motion, AnimatePresence } from "framer-motion";
 import CommandSelect from "@/components/command-select";
 import { cn } from "@/lib/utils";
 
-const STATUS_META: Record<
-  MeetingStatus,
-  { label: string; icon: React.ElementType; color: string; bg: string; description: string }
-> = {
+/* =============================================================================
+   TYPES
+============================================================================= */
+
+type StatusMeta = {
+  label: string;
+  icon: LucideIcon;
+  color: string;
+  bg: string;
+  description: string;
+};
+
+interface QuickTabProps {
+  active: boolean;
+  onClick: () => void;
+  icon: LucideIcon;
+  label: string;
+  color: string;
+}
+
+/* =============================================================================
+   STATUS META CONFIG
+============================================================================= */
+
+const STATUS_META: Record<MeetingStatus, StatusMeta> = {
   upcoming: {
     label: "Upcoming",
     icon: Clock,
@@ -50,7 +73,7 @@ const STATUS_META: Record<
     bg: "bg-amber-500/10",
     description: "AI is generating notes & insights",
   },
-  Cancelled: {
+  cancelled: {
     label: "Cancelled",
     icon: XCircle,
     color: "text-rose-500",
@@ -59,7 +82,15 @@ const STATUS_META: Record<
   },
 };
 
-const statusOptions = [
+/* =============================================================================
+   OPTIONS
+============================================================================= */
+
+const statusOptions: {
+  label: string;
+  value: MeetingStatus | "";
+  description: string;
+}[] = [
   {
     label: "All Status",
     value: "",
@@ -67,25 +98,33 @@ const statusOptions = [
   },
   ...Object.entries(STATUS_META).map(([key, meta]) => ({
     label: meta.label,
-    value: key,
+    value: key as MeetingStatus,
     description: meta.description,
   })),
 ];
 
+/* =============================================================================
+   MAIN COMPONENT
+============================================================================= */
+
 export const StatusFilter = () => {
   const [filters, setFilters] = useMeetingsFilters();
-  const current = filters.status;
+
+  const current = filters.status ?? null;
   const selectedMeta = current ? STATUS_META[current] : null;
 
   return (
     <TooltipProvider>
       <div className="flex flex-wrap items-center gap-2">
-        {/* DROPDOWN SELECT */}
+        {/* DROPDOWN */}
         <div className="relative group">
-          <div className={cn(
-            "absolute -inset-0.5 bg-primary/20 rounded-xl blur opacity-0 group-hover:opacity-100 transition duration-500",
-            current && "opacity-50"
-          )} />
+          <div
+            className={cn(
+              "absolute -inset-0.5 bg-primary/20 rounded-xl blur opacity-0 group-hover:opacity-100 transition duration-500",
+              current && "opacity-50"
+            )}
+          />
+
           <CommandSelect
             placeholder="Filter Status"
             className={cn(
@@ -95,12 +134,14 @@ export const StatusFilter = () => {
             options={statusOptions}
             value={current ?? ""}
             onChange={(value) =>
-              setFilters({ status: (value as MeetingStatus) || undefined })
+              setFilters({
+                status: value ? (value as MeetingStatus) : undefined,
+              })
             }
           />
         </div>
 
-        {/* ACTIVE FILTER BADGE */}
+        {/* ACTIVE BADGE */}
         <AnimatePresence mode="wait">
           {selectedMeta && (
             <motion.div
@@ -114,20 +155,23 @@ export const StatusFilter = () => {
                   <Badge
                     variant="secondary"
                     className={cn(
-                      "h-10 px-3 rounded-xl border flex items-center gap-2 transition-all duration-300 shadow-sm",
+                      "h-10 px-3 rounded-xl border flex items-center gap-2 transition-all shadow-sm",
                       selectedMeta.bg,
                       selectedMeta.color,
                       "border-current/20"
                     )}
                   >
-                    <selectedMeta.icon className={cn(
-                      "size-3.5",
-                      current === "active" || current === "processing" ? "animate-spin" : ""
-                    )} />
+                    <selectedMeta.icon
+                      className={cn(
+                        "size-3.5",
+                        (current === "active" || current === "processing") && "animate-spin"
+                      )}
+                    />
                     <span className="font-bold text-[11px] uppercase tracking-wider">
                       {selectedMeta.label}
                     </span>
                     <button
+                      type="button"
                       onClick={() => setFilters({ status: undefined })}
                       className="ml-1 hover:bg-current/10 rounded-full p-0.5 transition-colors"
                     >
@@ -137,7 +181,9 @@ export const StatusFilter = () => {
                 </TooltipTrigger>
                 <TooltipContent side="bottom" className="rounded-xl p-3 shadow-xl border-border/50">
                   <div className="flex flex-col gap-1">
-                    <span className="font-black text-[10px] uppercase tracking-widest opacity-50">Status Info</span>
+                    <span className="font-black text-[10px] uppercase tracking-widest opacity-50">
+                      Status Info
+                    </span>
                     <p className="text-xs font-medium leading-tight max-w-[150px]">
                       {selectedMeta.description}
                     </p>
@@ -148,30 +194,39 @@ export const StatusFilter = () => {
           )}
         </AnimatePresence>
 
-        {/* QUICK TOGGLES (Extra Feature for Desktop) */}
+        {/* QUICK TABS */}
         <div className="hidden lg:flex items-center bg-muted/40 p-1 rounded-xl border border-border/40 ml-2">
-           <QuickTab 
-             active={current === "active"} 
-             onClick={() => setFilters({ status: "active" })}
-             icon={Loader2}
-             label="Live"
-             color="text-emerald-500"
-           />
-           <QuickTab 
-             active={current === "processing"} 
-             onClick={() => setFilters({ status: "processing" })}
-             icon={Sparkles}
-             label="AI"
-             color="text-amber-500"
-           />
+          <QuickTab
+            active={current === "active"}
+            onClick={() => setFilters({ status: "active" as MeetingStatus })}
+            icon={Loader2}
+            label="Live"
+            color="text-emerald-500"
+          />
+          <QuickTab
+            active={current === "processing"}
+            onClick={() => setFilters({ status: "processing" as MeetingStatus })}
+            icon={Sparkles}
+            label="AI"
+            color="text-amber-500"
+          />
         </div>
       </div>
     </TooltipProvider>
   );
 };
 
-// Sub-component for Quick Navigation
-function QuickTab({ active, onClick, icon: Icon, label, color }: any) {
+/* =============================================================================
+   QUICK TAB
+============================================================================= */
+
+function QuickTab({
+  active,
+  onClick,
+  icon: Icon,
+  label,
+  color,
+}: QuickTabProps) {
   return (
     <Button
       variant="ghost"
@@ -179,10 +234,17 @@ function QuickTab({ active, onClick, icon: Icon, label, color }: any) {
       onClick={onClick}
       className={cn(
         "h-8 rounded-lg text-[10px] font-black uppercase tracking-widest gap-2 px-3 transition-all",
-        active ? "bg-background shadow-sm " + color : "text-muted-foreground hover:text-foreground"
+        active
+          ? cn("bg-background shadow-sm", color)
+          : "text-muted-foreground hover:text-foreground"
       )}
     >
-      <Icon className={cn("size-3", active && (label === "Live" || label === "AI") && "animate-spin")} />
+      <Icon
+        className={cn(
+          "size-3",
+          active && (label === "Live" || label === "AI") && "animate-spin"
+        )}
+      />
       {label}
     </Button>
   );

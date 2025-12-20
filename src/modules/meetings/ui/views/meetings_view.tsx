@@ -22,7 +22,7 @@ import { EmptyState } from "@/components/empty-state";
 import { ErrorState } from "@/components/error-state";
 import { LoadingState } from "@/components/loading-state";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+// import { Badge } from "@/components/ui/badge";
 
 import { columns } from "../components/columns";
 import { useMeetingsFilters } from "../../hooks/use-meetings-filters";
@@ -35,6 +35,7 @@ export const MeetingsView = () => {
   const router = useRouter();
   const [filters, setFilters] = useMeetingsFilters();
   const queryClient = useQueryClient();
+  console.log(queryClient)
 
   const { data, isRefetching } = useSuspenseQuery(
     trpc.meetings.getMany.queryOptions({

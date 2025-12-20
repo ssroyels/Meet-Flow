@@ -106,6 +106,7 @@ export const ChatProvider = ({ meetingId }: Props) => {
         },
       ]);
     } catch (err) {
+      console.log(err)
       setMessages((prev) => [
         ...prev,
         {
@@ -153,7 +154,7 @@ export const ChatProvider = ({ meetingId }: Props) => {
             <span>Meet.AI Bot</span>
           </div>
           <p className="text-[11px] text-muted-foreground leading-relaxed italic">
-            "I'm listening and ready to summarize the key points of this session."
+            I am listening and ready to summarize the key points of this session.
           </p>
         </div>
       </div>
