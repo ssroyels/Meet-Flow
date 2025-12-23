@@ -6,14 +6,23 @@ import { db } from "@/db";
 import { meetings } from "@/db/schema";
 import { eq } from "drizzle-orm";
 
+interface Context {
+  params: Promise<{
+    meetingId: string;
+  }>;
+}
+
 export async function GET(
   _req: Request,
-  { params }: { params: { meetingId: string } }
+  { params }: Context
 ) {
   try {
+    // ✅ Next.js 15: await params
+    const { meetingId } = await params;
+
     // 🔐 Auth check
     const session = await auth.api.getSession({
-      headers: await headers(), // ✅ FIX
+      headers: await headers(), // ✅ NO await
     });
 
     if (!session?.user) {
@@ -23,7 +32,7 @@ export async function GET(
       );
     }
 
-    // 📌 Fetch only meeting
+    // 📌 Fetch meeting
     const [meeting] = await db
       .select({
         id: meetings.id,
@@ -33,7 +42,7 @@ export async function GET(
         createdAt: meetings.createdAt,
       })
       .from(meetings)
-      .where(eq(meetings.id, params.meetingId));
+      .where(eq(meetings.id, meetingId));
 
     if (!meeting) {
       return NextResponse.json(
