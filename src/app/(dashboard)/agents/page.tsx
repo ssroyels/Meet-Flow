@@ -6,26 +6,26 @@ import { getQueryClient, trpc } from "@/trpc/server";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import { Suspense } from "react";
 
-
-
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import type { SearchParams } from "nuqs";
 import { filterSearchParams } from "@/modules/agents/params";
 import { ErrorBoundary } from "react-error-boundary";
-
 import { ListHeader } from "@/modules/agents/ui/components/list-header";
 
 interface Props {
-  searchParams: SearchParams;
+  searchParams: Promise<SearchParams>;
 }
 
 const Page = async ({ searchParams }: Props) => {
-  const filters = filterSearchParams(searchParams); // ✅ function now
+  // ✅ Next.js 15 requires awaiting searchParams
+  const resolvedSearchParams = await searchParams;
+
+  const filters = filterSearchParams(resolvedSearchParams);
 
   const session = await auth.api.getSession({
-    headers:await headers(), // ✅ no await
+    headers: await headers(), // ✅ DO NOT await
   });
 
   if (!session) {
@@ -33,15 +33,16 @@ const Page = async ({ searchParams }: Props) => {
   }
 
   const queryClient = getQueryClient();
+
   void queryClient.prefetchQuery(
     trpc.agents.getMany.queryOptions({
       ...filters,
-    }),
+    })
   );
 
   return (
     <>
-     <ListHeader/>
+      <ListHeader />
       <HydrationBoundary state={dehydrate(queryClient)}>
         <Suspense fallback={<AgentsViewLaoding />}>
           <ErrorBoundary fallback={<AgentsViewLaoding />}>
