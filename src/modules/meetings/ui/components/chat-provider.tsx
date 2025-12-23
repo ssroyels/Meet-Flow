@@ -95,17 +95,19 @@ export const ChatProvider = ({ meetingId }: Props) => {
       });
 
       const data = await res.json();
+      console.log(data)
 
       setMessages((prev) => [
         ...prev,
         {
           id: crypto.randomUUID(),
           role: "ai",
-          text: data.text ?? "I couldn't process that. Please try again.",
+          text: data.textdata ?? "I couldn't process that. Please try again.",
           timestamp: new Date(),
         },
       ]);
     } catch (err) {
+      console.log(err)
       setMessages((prev) => [
         ...prev,
         {
@@ -153,7 +155,7 @@ export const ChatProvider = ({ meetingId }: Props) => {
             <span>Meet.AI Bot</span>
           </div>
           <p className="text-[11px] text-muted-foreground leading-relaxed italic">
-            "I'm listening and ready to summarize the key points of this session."
+            I am listening and ready to summarize the key points of this session.
           </p>
         </div>
       </div>

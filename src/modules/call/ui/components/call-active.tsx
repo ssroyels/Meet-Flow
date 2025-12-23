@@ -58,6 +58,7 @@ export const CallActive = ({
       // 🔥 force audio channel open
       window.speechSynthesis.cancel();
       window.speechSynthesis.resume();
+      console.log(data.textdata)
 
       setAiSpeaking(true);
       speak(data.textdata, "en-US");

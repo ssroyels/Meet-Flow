@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState} from "react";
 import { ResponsiveDialog } from "@/components/ui/responsive-dialog";
 import { MeetingForm } from "./meeting-form";
 import { MeetingGetOne } from "../../types";

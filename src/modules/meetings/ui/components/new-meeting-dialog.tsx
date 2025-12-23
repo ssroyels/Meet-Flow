@@ -9,10 +9,12 @@ import {
   ShieldCheck, 
   Zap, 
   ArrowRight,
-  MonitorCheck
+  MonitorCheck,
+  LucideIcon
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
+
 
 interface NewMeetingDialogProps {
   open: boolean;
@@ -107,7 +109,7 @@ export const NewMeetingDialog = ({ open, onOpenChange }: NewMeetingDialogProps) 
 };
 
 /* --- SUB-COMPONENT: STEP ITEM --- */
-function StepItem({ icon: Icon, label, active }: { icon: any, label: string, active?: boolean }) {
+function StepItem({ icon: Icon, label, active }: { icon:LucideIcon, label: string, active?: boolean }) {
   return (
     <div className="flex flex-col items-center gap-1.5">
       <div className={cn(

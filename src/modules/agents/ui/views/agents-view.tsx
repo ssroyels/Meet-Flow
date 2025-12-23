@@ -4,13 +4,13 @@ import { motion } from "framer-motion";
 import { useTRPC } from "@/trpc/client";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { Plus, Bot, ShieldCheck, Activity, Search } from "lucide-react";
+import { Plus, Bot, ShieldCheck, Activity} from "lucide-react";
 
 import { columns } from "../components/columns";
 import { DataTable } from "@/components/data-table";
 import { DataPagination } from "../components/data-pagination";
 import { EmptyState } from "@/components/empty-state";
-import { LoadingState } from "@/components/loading-state";
+// import { LoadingState } from "@/components/loading-state";
 import { ErrorState } from "@/components/error-state";
 import { Button } from "@/components/ui/button";
 import { useAgentsFilters } from "../../hooks/use-agents-filters";
@@ -29,7 +29,7 @@ export const AgentsView = () => {
 
   // Stats for the top cards (Example logic)
   const stats = [
-    { label: "Total Agents", value: data.totalCount, icon: Bot, color: "text-blue-500", bg: "bg-blue-500/10" },
+    { label: "Total Agents", value: data.total, icon: Bot, color: "text-blue-500", bg: "bg-blue-500/10" },
     { label: "Active Now", value: data.items.length, icon: Activity, color: "text-green-500", bg: "bg-green-500/10" },
     { label: "Security Verified", value: "100%", icon: ShieldCheck, color: "text-purple-500", bg: "bg-purple-500/10" },
   ];

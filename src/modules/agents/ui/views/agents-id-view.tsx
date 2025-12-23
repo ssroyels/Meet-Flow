@@ -17,16 +17,16 @@ import {
 } from "lucide-react";
 
 import { useTRPC } from "@/trpc/client";
-import { AgentIdViewHeader } from "../components/agent-id-view-header";
+// import { AgentIdViewHeader } from "../components/agent-id-view-header";
 import { GeneratedAvatar } from "@/components/generated-avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { useConfirm } from "../../hooks/use-confirm";
 import { UpdateAgentDialog } from "../components/update-agent-dialog";
-import { LoadingState } from "@/components/loading-state";
+
 import { ErrorState } from "@/components/error-state";
-import { cn } from "@/lib/utils";
+
 
 interface Props {
   agentId: string;
@@ -114,7 +114,7 @@ export const AgentIdView = ({ agentId }: Props) => {
                 <div className="relative">
                   <div className="absolute -inset-1 bg-gradient-to-tr from-primary to-blue-600 rounded-full blur opacity-25" />
                   <GeneratedAvatar
-                    variant="botttsNeutral"
+                  
                     seed={data.name}
                     className="size-24 relative border-4 border-background shadow-xl rounded-full"
                   />
@@ -181,7 +181,7 @@ export const AgentIdView = ({ agentId }: Props) => {
                 <div className="relative">
                   <div className="absolute -left-4 top-0 bottom-0 w-1 bg-primary/20 rounded-full" />
                   <p className="text-lg text-foreground/90 leading-relaxed italic whitespace-pre-wrap pl-2">
-                    "{data.instructions || "No instructions provided for this agent."}"
+                    {data.instructions || "No instructions provided for this agent."}
                   </p>
                 </div>
               </div>

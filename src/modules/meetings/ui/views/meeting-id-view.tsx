@@ -13,7 +13,8 @@ import {
   ChevronLeft,
   ShieldCheck,
   Zap,
-  Activity
+  Activity,
+  LucideIcon
 } from "lucide-react";
 import { toast } from "sonner";
 import { 
@@ -28,7 +29,7 @@ import { LoadingState } from "@/components/loading-state";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
+// import { Separator } from "@/components/ui/separator";
 import {
   AlertDialog,
   AlertDialogTrigger,
@@ -48,6 +49,7 @@ import { CancelledState } from "../components/cancel-state";
 import { ProcessingState } from "../components/processing-state";
 import CompletedMeetingDashboard from "../components/completed-state";
 import { cn } from "@/lib/utils";
+
 
 interface Props {
   meetingId: string;
@@ -86,7 +88,7 @@ export const MeetingIdView = ({ meetingId }: Props) => {
   const status = meeting.status ?? "unknown";
 
   // Dynamic Status Configurations
-  const statusStyles: Record<string, { color: string; icon: any }> = {
+  const statusStyles: Record<string, { color: string; icon: LucideIcon }> = {
     active: { color: "text-emerald-500", icon: Activity },
     completed: { color: "text-blue-500", icon: ShieldCheck },
     upcoming: { color: "text-amber-500", icon: Zap },
@@ -231,7 +233,7 @@ export const MeetingIdView = ({ meetingId }: Props) => {
                 <div className="mt-8 space-y-3">
                    <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Session Brief</p>
                    <div className="p-5 rounded-2xl bg-background border leading-relaxed text-muted-foreground italic font-medium">
-                     "{meeting.name}"
+                     {"{meeting.name}"}
                    </div>
                 </div>
               )}

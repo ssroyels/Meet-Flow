@@ -7,8 +7,6 @@ import {
   CircleCheckIcon,
   CircleXIcon,
   ClockArrowUpIcon,
-  ClockFadingIcon,
-  CornerDownRightIcon,
   Loader2,
   Calendar,
   Activity,
@@ -27,9 +25,9 @@ function formatDuration(seconds: number) {
     round: true,
     spacer: "",
     language: "shortEn",
-    languages: {
-      shortEn: { h: () => "h", m: () => "m", s: () => "s" },
-    },
+    // languages: {
+    //   shortEn: { h: () => "h", m: () => "m", s: () => "s" },
+    // },
   });
 }
 
@@ -77,7 +75,6 @@ export const columns: ColumnDef<MeetingGetMany[number]>[] = [
           <div className="flex items-center gap-x-1.5 group">
             <div className="relative">
               <GeneratedAvatar
-                variant="botttsNeutral"
                 seed={row.original.agent.name}
                 className="size-5 rounded-md border border-border shadow-sm"
               />

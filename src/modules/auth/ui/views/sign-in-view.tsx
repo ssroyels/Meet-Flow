@@ -120,7 +120,7 @@ export const SignInView = () => {
                 </div>
                 <h2 className="text-3xl font-bold tracking-tight mb-2">Welcome Back</h2>
                 <p className="text-green-100/80 text-sm font-light">
-                  Continue your journey with the world's smartest collaboration tool.
+                  Continue your journey with the worlds smartest collaboration tool.
                 </p>
               </motion.div>
 

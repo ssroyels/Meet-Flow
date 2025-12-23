@@ -25,7 +25,9 @@ import {
 } from "@/constants";
 import { TRPCError } from "@trpc/server";
 import { MeetingsInsertSchema } from "../schema";
-import { MeetingStatus, StreamTranscriptItem } from "../types";
+import {  StreamTranscriptItem } from "../types";
+import { MEETING_STATUSES} from "../types";
+
 import { streamVideo } from "@/lib/stream-video";
 import { streamChat } from "@/lib/stream-chat";
 import { generateAvatarUri } from "@/lib/avatar";
@@ -314,55 +316,55 @@ export const meetingsRouter = createTRPCRouter({
   /* GET MANY                                                                   */
   /* -------------------------------------------------------------------------- */
   getMany: protectedProcedure
-    .input(
-      z.object({
-        page: z.number().default(DEFAULT_PAGE),
-        pageSize: z
-          .number()
-          .min(MIN_PAGE_SIZE)
-          .max(MAX_PAGE_SIZE)
-          .default(DEFAULT_PAGE_SIZE),
-        search: z.string().nullish(),
-        agentId: z.string().nullish(),
-        status: z.nativeEnum(MeetingStatus).nullish(),
+  .input(
+    z.object({
+      page: z.number().default(DEFAULT_PAGE),
+      pageSize: z
+        .number()
+        .min(MIN_PAGE_SIZE)
+        .max(MAX_PAGE_SIZE)
+        .default(DEFAULT_PAGE_SIZE),
+      search: z.string().nullish(),
+      agentId: z.string().nullish(),
+      status: z.enum(MEETING_STATUSES).nullish(),
+    })
+  )
+  .query(async ({ ctx, input }) => {
+    const { search, page, pageSize, status, agentId } = input;
+
+    const where = and(
+      eq(meetings.userId, ctx.auth.user.id),
+      search ? ilike(meetings.name, `%${search}%`) : undefined,
+      status ? eq(meetings.status, status) : undefined,
+      agentId ? eq(meetings.agentId, agentId) : undefined
+    );
+
+    const items = await db
+      .select({
+        ...getTableColumns(meetings),
+        agent: agents,
+        duration: sql<number>`
+          EXTRACT(EPOCH FROM (${meetings.endedAt} - ${meetings.startedAt}))
+        `.as("duration"),
       })
-    )
-    .query(async ({ ctx, input }) => {
-      const { search, page, pageSize, status, agentId } = input;
+      .from(meetings)
+      .innerJoin(agents, eq(meetings.agentId, agents.id))
+      .where(where)
+      .orderBy(desc(meetings.createdAt))
+      .limit(pageSize)
+      .offset((page - 1) * pageSize);
 
-      const where = and(
-        eq(meetings.userId, ctx.auth.user.id),
-        search ? ilike(meetings.name, `%${search}%`) : undefined,
-        status ? eq(meetings.status, status) : undefined,
-        agentId ? eq(meetings.agentId, agentId) : undefined
-      );
+    const [{ count: total }] = await db
+      .select({ count: count() })
+      .from(meetings)
+      .where(where);
 
-      const items = await db
-        .select({
-          ...getTableColumns(meetings),
-          agent: agents,
-          duration: sql<number>`
-            EXTRACT(EPOCH FROM (${meetings.endedAt} - ${meetings.startedAt}))
-          `.as("duration"),
-        })
-        .from(meetings)
-        .innerJoin(agents, eq(meetings.agentId, agents.id))
-        .where(where)
-        .orderBy(desc(meetings.createdAt))
-        .limit(pageSize)
-        .offset((page - 1) * pageSize);
-
-      const [{ count: total }] = await db
-        .select({ count: count() })
-        .from(meetings)
-        .where(where);
-
-      return {
-        items,
-        total,
-        totalPages: Math.max(1, Math.ceil(total / pageSize)),
-      };
-    }),
+    return {
+      items,
+      total,
+      totalPages: Math.max(1, Math.ceil(total / pageSize)),
+    };
+  }),
 
     /* -------------------------------------------------------------------------- */
 /* GET COMPLETED MEETING (DASHBOARD)                                           */

@@ -9,11 +9,11 @@ import {
   Search, 
   RefreshCcw,
   Video,
-  ArrowRight
+  // ArrowRight
 } from "lucide-react";
 import {
   useSuspenseQuery,
-  useQueryClient,
+  // useQueryClient,
 } from "@tanstack/react-query";
 
 import { useTRPC } from "@/trpc/client";
@@ -22,7 +22,7 @@ import { EmptyState } from "@/components/empty-state";
 import { ErrorState } from "@/components/error-state";
 import { LoadingState } from "@/components/loading-state";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+// import { Badge } from "@/components/ui/badge";
 
 import { columns } from "../components/columns";
 import { useMeetingsFilters } from "../../hooks/use-meetings-filters";
@@ -34,7 +34,7 @@ export const MeetingsView = () => {
   const trpc = useTRPC();
   const router = useRouter();
   const [filters, setFilters] = useMeetingsFilters();
-  const queryClient = useQueryClient();
+  // const queryClient = useQueryClient();
 
   const { data, isRefetching } = useSuspenseQuery(
     trpc.meetings.getMany.queryOptions({
@@ -128,13 +128,13 @@ export const MeetingsView = () => {
             <EmptyState
               title="No Sessions Logged"
               description="Your meeting history will appear here once you start your first session with an agent."
-              action={
-                <Button onClick={() => router.push("/meetings/new")} className="rounded-xl px-8 h-12 font-bold gap-2 shadow-xl shadow-primary/20">
-                  <Video className="size-4" />
-                  Launch First Session
-                  <ArrowRight className="size-4" />
-                </Button>
-              }
+              // action={
+              //   <Button onClick={() => router.push("/meetings/new")} className="rounded-xl px-8 h-12 font-bold gap-2 shadow-xl shadow-primary/20">
+              //     <Video className="size-4" />
+              //     Launch First Session
+              //     <ArrowRight className="size-4" />
+              //   </Button>
+              // }
             />
           </div>
         )}
@@ -188,7 +188,7 @@ export const MeetingsViewLoading = () => (
 /* ========================= ERROR ========================= */
 
 export const MeetingsViewError = () => {
-  const queryClient = useQueryClient();
+  // const queryClient = useQueryClient();
 
   return (
     <div className="flex flex-1 flex-col items-center justify-center px-4 py-20">
@@ -196,19 +196,19 @@ export const MeetingsViewError = () => {
         <ErrorState
           title="Terminal Connection Failed"
           description="We encountered a protocol error while fetching your history. Our systems have been notified."
-          action={
-            <Button
-              size="lg"
-              className="w-full rounded-2xl font-bold bg-destructive hover:bg-destructive/90 shadow-xl shadow-destructive/20"
-              onClick={() =>
-                queryClient.invalidateQueries({
-                  queryKey: [["meetings", "getMany"]],
-                })
-              }
-            >
-              Force Reconnect
-            </Button>
-          }
+          // action={
+          //   <Button
+          //     size="lg"
+          //     className="w-full rounded-2xl font-bold bg-destructive hover:bg-destructive/90 shadow-xl shadow-destructive/20"
+          //     onClick={() =>
+          //       queryClient.invalidateQueries({
+          //         queryKey: [["meetings", "getMany"]],
+          //       })
+          //     }
+          //   >
+          //     Force Reconnect
+          //   </Button>
+          // }
         />
       </div>
     </div>

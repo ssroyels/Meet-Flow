@@ -9,10 +9,67 @@ import { generateAvatarUri } from "@/lib/avatar";
 import { and, eq } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 
+
+/* -------------------------------------------------------------------------- */
+/* TYPES                                                                      */
+/* -------------------------------------------------------------------------- */
+
+type StreamWebhookEvent =
+  | CallSessionStartedEvent
+  | CallSessionEndedEvent
+  | CallTranscriptionReadyEvent
+  | MessageNewEvent;
+
+interface BaseEvent {
+  type: string;
+}
+
+/* ----------------------------- CALL START --------------------------------- */
+interface CallSessionStartedEvent extends BaseEvent {
+  type: "call.session_started";
+  call?: {
+    custom?: {
+      meetingId?: string;
+    };
+  };
+}
+
+/* ------------------------------ CALL END ---------------------------------- */
+interface CallSessionEndedEvent extends BaseEvent {
+  type: "call.session_ended";
+  call?: {
+    custom?: {
+      meetingId?: string;
+    };
+  };
+}
+
+/* ------------------------- TRANSCRIPTION READY ----------------------------- */
+interface CallTranscriptionReadyEvent extends BaseEvent {
+  type: "call.transcription_ready";
+  call_cid?: string;
+  call_transcription?: {
+    url?: string;
+  };
+}
+
+/* ----------------------------- CHAT MESSAGE -------------------------------- */
+interface MessageNewEvent extends BaseEvent {
+  type: "message.new";
+  user?: {
+    id?: string;
+  };
+  channel_id?: string;
+  message?: {
+    text?: string;
+  };
+}
+
+
 /* -------------------------------------------------------------------------- */
 /* VERIFY STREAM SIGNATURE                                                     */
 /* -------------------------------------------------------------------------- */
-function verifySignature(body: string, signature: string) {
+function verifySignature(body: string, signature: string): boolean {
   return streamVideo.verifyWebhook(body, signature);
 }
 
@@ -33,20 +90,19 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
   }
 
-  let payload: any;
+  let payload: StreamWebhookEvent;
+
   try {
-    payload = JSON.parse(body);
+    payload = JSON.parse(body) as StreamWebhookEvent;
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const eventType = payload?.type;
-
   /* ------------------------------------------------------------------------ */
   /* CALL START                                                                */
   /* ------------------------------------------------------------------------ */
-  if (eventType === "call.session_started") {
-    const meetingId = payload?.call?.custom?.meetingId;
+  if (payload.type === "call.session_started") {
+    const meetingId = payload.call?.custom?.meetingId;
     if (!meetingId) return NextResponse.json({ status: "ok" });
 
     await db
@@ -60,8 +116,8 @@ export async function POST(req: NextRequest) {
   /* ------------------------------------------------------------------------ */
   /* CALL ENDED                                                                */
   /* ------------------------------------------------------------------------ */
-  if (eventType === "call.session_ended") {
-    const meetingId = payload?.call?.custom?.meetingId;
+  if (payload.type === "call.session_ended") {
+    const meetingId = payload.call?.custom?.meetingId;
     if (!meetingId) return NextResponse.json({ status: "ok" });
 
     await db
@@ -75,9 +131,9 @@ export async function POST(req: NextRequest) {
   /* ------------------------------------------------------------------------ */
   /* TRANSCRIPTION READY                                                       */
   /* ------------------------------------------------------------------------ */
-  if (eventType === "call.transcription_ready") {
-    const meetingId = payload?.call_cid?.split(":")?.[1];
-    const transcriptUrl = payload?.call_transcription?.url;
+  if (payload.type === "call.transcription_ready") {
+    const meetingId = payload.call_cid?.split(":")?.[1];
+    const transcriptUrl = payload.call_transcription?.url;
 
     if (!meetingId || !transcriptUrl) {
       return NextResponse.json({ status: "ok" });
@@ -105,10 +161,10 @@ export async function POST(req: NextRequest) {
   /* ------------------------------------------------------------------------ */
   /* CHAT → GEMINI                                                             */
   /* ------------------------------------------------------------------------ */
-  if (eventType === "message.new") {
-    const userId = payload?.user?.id;
-    const channelId = payload?.channel_id;
-    const text = payload?.message?.text;
+  if (payload.type === "message.new") {
+    const userId = payload.user?.id;
+    const channelId = payload.channel_id;
+    const text = payload.message?.text;
 
     if (!userId || !channelId || !text) {
       return NextResponse.json({ status: "ok" });
@@ -153,9 +209,8 @@ ${text}
 `;
 
     const result = await geminiModel.generateContent(prompt);
-    
     const reply = result.response.text();
-    console.log(reply)
+
     if (!reply) return NextResponse.json({ status: "ok" });
 
     const avatarUrl = generateAvatarUri({
@@ -181,4 +236,3 @@ ${text}
 
   return NextResponse.json({ status: "ok" });
 }
-

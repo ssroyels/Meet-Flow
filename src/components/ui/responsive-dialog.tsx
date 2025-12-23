@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils";
 interface ResponsiveDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  title: string;
+  title: React.ReactNode;
   description?: string;
   children: React.ReactNode;
   /** Extra class for outer wrapper if needed */

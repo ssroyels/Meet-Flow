@@ -1,12 +1,17 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useTRPC } from "@/trpc/client";
-import { MeetingGetOne } from "../../types";
+import type { MeetingGetOne } from "../../types";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
-import z from "zod";
+import { z } from "zod";
 import { MeetingsInsertSchema } from "../../schema";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { motion, AnimatePresence } from "framer-motion";
@@ -20,14 +25,17 @@ import {
   FormMessage,
   FormDescription,
 } from "@/components/ui/form";
-
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
 import { GeneratedAvatar } from "@/components/generated-avatar";
 
-import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import {
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+} from "@/components/ui/popover";
 import {
   Command,
   CommandEmpty,
@@ -37,15 +45,31 @@ import {
   CommandList,
   CommandSeparator,
 } from "@/components/ui/command";
-import { ChevronsUpDown, Check, Plus, Loader2, Sparkles, Target } from "lucide-react";
+
+import {
+  ChevronsUpDown,
+  Check,
+  Plus,
+  Loader2,
+  Sparkles,
+  Target,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useRouter } from "next/navigation";
+import { Badge } from "@/components/ui/badge";
+
+/* -------------------------------------------------------------------------- */
+/* TYPES                                                                      */
+/* -------------------------------------------------------------------------- */
 
 interface MeetingFormProps {
   onSuccess?: (id?: string) => void;
   onCancel?: () => void;
   initialValues?: MeetingGetOne;
 }
+
+/* -------------------------------------------------------------------------- */
+/* COMPONENT                                                                  */
+/* -------------------------------------------------------------------------- */
 
 export const MeetingForm = ({
   onSuccess,
@@ -59,6 +83,10 @@ export const MeetingForm = ({
   const queryClient = useQueryClient();
   const router = useRouter();
 
+  const isEdit = !!initialValues?.id;
+
+  /* --------------------------------- AGENTS -------------------------------- */
+
   const agents = useQuery(
     trpc.agents.getMany.queryOptions({
       pageSize: 100,
@@ -66,21 +94,28 @@ export const MeetingForm = ({
     })
   );
 
-  const isEdit = !!initialValues?.id;
+  /* -------------------------------- MUTATIONS ------------------------------- */
 
   const createMeeting = useMutation(
     trpc.meetings.create.mutationOptions({
       onSuccess: async (data) => {
         await Promise.all([
-          queryClient.invalidateQueries(trpc.meetings.getMany.queryOptions({})),
-          queryClient.invalidateQueries(trpc.premium.getFreeUsage.queryOptions()),
+          queryClient.invalidateQueries(
+            trpc.meetings.getMany.queryOptions({})
+          ),
+          queryClient.invalidateQueries(
+            trpc.premium.getFreeUsage.queryOptions()
+          ),
         ]);
+
         toast.success("Meeting created successfully!");
         onSuccess?.(data.id);
       },
       onError: (error) => {
         toast.error(error.message);
-        if (error.data?.code === "FORBIDDEN") router.push("/upgrade");
+        if (error.data?.code === "FORBIDDEN") {
+          router.push("/upgrade");
+        }
       },
     })
   );
@@ -88,16 +123,26 @@ export const MeetingForm = ({
   const updateMeeting = useMutation(
     trpc.meetings.update.mutationOptions({
       onSuccess: async () => {
-        await queryClient.invalidateQueries(trpc.meetings.getMany.queryOptions({}));
+        await queryClient.invalidateQueries(
+          trpc.meetings.getMany.queryOptions({})
+        );
+
         if (initialValues?.id) {
-          await queryClient.invalidateQueries(trpc.meetings.getOne.queryOptions({ id: initialValues.id }));
+          await queryClient.invalidateQueries(
+            trpc.meetings.getOne.queryOptions({
+              id: initialValues.id,
+            })
+          );
         }
+
         toast.success("Meeting updated!");
         onSuccess?.();
       },
       onError: (error) => toast.error(error.message),
     })
   );
+
+  /* ---------------------------------- FORM ---------------------------------- */
 
   const form = useForm<z.infer<typeof MeetingsInsertSchema>>({
     resolver: zodResolver(MeetingsInsertSchema),
@@ -107,20 +152,40 @@ export const MeetingForm = ({
     },
   });
 
-  const isPending = createMeeting.isPending || updateMeeting.isPending;
+  const isPending =
+    createMeeting.isPending || updateMeeting.isPending;
+
   const isAgentsLoading = agents.isLoading;
 
-  const onSubmit = (values: z.infer<typeof MeetingsInsertSchema>) => {
-    isEdit ? updateMeeting.mutate({ id: initialValues!.id, ...values }) : createMeeting.mutate(values);
+  const selectedAgent = agents.data?.items.find(
+    (agent) => agent.id === form.watch("agentId")
+  );
+
+  /* ----------------------------- SUBMIT HANDLER ----------------------------- */
+
+  const onSubmit = (
+    values: z.infer<typeof MeetingsInsertSchema>
+  ) => {
+    if (isEdit) {
+      updateMeeting.mutate({
+        id: initialValues!.id,
+        ...values,
+      });
+    } else {
+      createMeeting.mutate(values);
+    }
   };
 
-  const selectedAgent = agents.data?.items.find((agent) => agent.id === form.watch("agentId"));
+  /* ---------------------------------- UI ----------------------------------- */
 
   return (
     <Form {...form}>
-      <form className="space-y-6" onSubmit={form.handleSubmit(onSubmit)}>
-        {/* 1. MEETING NAME SECTION */}
-        <div className="space-y-4 rounded-2xl bg-muted/30 p-4 border border-border/50">
+      <form
+        onSubmit={form.handleSubmit(onSubmit)}
+        className="space-y-6"
+      >
+        {/* MEETING NAME */}
+        <div className="rounded-2xl bg-muted/30 p-4 border">
           <FormField
             name="name"
             control={form.control}
@@ -128,13 +193,15 @@ export const MeetingForm = ({
               <FormItem>
                 <div className="flex items-center gap-2 mb-1">
                   <Target className="size-4 text-primary" />
-                  <FormLabel className="text-sm font-bold uppercase tracking-wider opacity-70">General Information</FormLabel>
+                  <FormLabel className="text-sm font-bold uppercase">
+                    General Information
+                  </FormLabel>
                 </div>
                 <FormControl>
-                  <Input 
-                    {...field} 
-                    placeholder="e.g. Strategic Planning Q4" 
-                    className="h-12 bg-background border-border/60 focus-visible:ring-primary/20 rounded-xl"
+                  <Input
+                    {...field}
+                    placeholder="e.g. Strategic Planning Q4"
+                    className="h-12 rounded-xl"
                   />
                 </FormControl>
                 <FormMessage />
@@ -143,146 +210,166 @@ export const MeetingForm = ({
           />
         </div>
 
-        {/* 2. AGENT SELECTION SECTION */}
-        <div className="space-y-4">
-          <FormField
-            name="agentId"
-            control={form.control}
-            render={({ field }) => (
-              <FormItem className="flex flex-col">
-                <div className="flex items-center gap-2 mb-1">
-                  <Sparkles className="size-4 text-primary" />
-                  <FormLabel className="text-sm font-bold uppercase tracking-wider opacity-70">AI Orchestrator</FormLabel>
-                </div>
-                <Popover open={agentOpen} onOpenChange={setAgentOpen}>
-                  <PopoverTrigger asChild>
-                    <FormControl>
-                      <Button
-                        variant="outline"
-                        role="combobox"
-                        className={cn(
-                          "w-full h-12 justify-between rounded-xl border-border/60 bg-background px-4 hover:bg-muted/50 transition-all",
-                          !field.value && "text-muted-foreground"
-                        )}
-                        disabled={isAgentsLoading || isPending}
-                      >
-                        <div className="flex items-center gap-2">
-                           {selectedAgent ? (
-                             <GeneratedAvatar seed={selectedAgent.name} variant="botttsNeutral" className="size-5 rounded-md" />
-                           ) : <div className="size-5 rounded-md bg-muted animate-pulse" />}
-                           {isAgentsLoading ? "Synchronizing Agents..." : selectedAgent ? selectedAgent.name : "Choose an Agent"}
-                        </div>
-                        <ChevronsUpDown className="ml-2 h-4 w-4 opacity-50" />
-                      </Button>
-                    </FormControl>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0 rounded-xl overflow-hidden shadow-2xl" align="start">
-                    <Command className="bg-popover">
-                      <CommandInput placeholder="Search neural nodes..." onValueChange={setAgentSearch} className="h-11" />
-                      <CommandList className="max-h-[280px]">
-                        <CommandEmpty>
-                          {isAgentsLoading ? <div className="p-4 flex justify-center"><Loader2 className="animate-spin size-4" /></div> : "No agents found."}
-                        </CommandEmpty>
-                        <CommandGroup heading="Available Agents">
-                          {agents.data?.items.map((agent) => (
-                            <CommandItem
-                              key={agent.id}
-                              value={agent.name}
-                              onSelect={() => {
-                                field.onChange(agent.id);
-                                setAgentOpen(false);
-                              }}
-                              className="flex items-center justify-between py-3 px-4 cursor-pointer"
-                            >
-                              <div className="flex items-center gap-3">
-                                <GeneratedAvatar seed={agent.name} variant="botttsNeutral" className="size-8 rounded-lg" />
-                                <div className="flex flex-col">
-                                  <span className="font-bold text-sm">{agent.name}</span>
-                                  <span className="text-[10px] text-muted-foreground line-clamp-1 max-w-[200px] uppercase tracking-tighter">
-                                    {agent.instructions || "Standard Response Protocol"}
-                                  </span>
-                                </div>
-                              </div>
-                              <Check className={cn("h-4 w-4 text-primary transition-opacity", field.value === agent.id ? "opacity-100" : "opacity-0")} />
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                        <CommandSeparator />
-                        <CommandGroup>
-                          <CommandItem
-                            onSelect={() => {
-                              setAgentOpen(false);
-                              router.push("/agents/new");
-                            }}
-                            className="flex items-center gap-3 py-3 px-4 text-primary font-bold cursor-pointer"
-                          >
-                            <div className="size-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                              <Plus className="size-4" />
-                            </div>
-                            <span>Initialize New Agent</span>
-                          </CommandItem>
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
-                <FormDescription className="text-[11px] px-1">
-                  Selected AI will manage real-time interactions and data extraction.
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
+        {/* AGENT SELECT */}
+        <FormField
+          name="agentId"
+          control={form.control}
+          render={({ field }) => (
+            <FormItem className="flex flex-col">
+              <div className="flex items-center gap-2 mb-1">
+                <Sparkles className="size-4 text-primary" />
+                <FormLabel className="text-sm font-bold uppercase">
+                  AI Orchestrator
+                </FormLabel>
+              </div>
 
-        {/* 3. SELECTED AGENT PREVIEW (Animated) */}
+              <Popover
+                open={agentOpen}
+                onOpenChange={setAgentOpen}
+              >
+                <PopoverTrigger asChild>
+                  <FormControl>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      disabled={isAgentsLoading || isPending}
+                      className="h-12 justify-between rounded-xl"
+                    >
+                      <div className="flex items-center gap-2">
+                        {selectedAgent ? (
+                          <GeneratedAvatar
+                            seed={selectedAgent.name}
+                            className="size-5"
+                          />
+                        ) : (
+                          <div className="size-5 bg-muted rounded-md" />
+                        )}
+                        {isAgentsLoading
+                          ? "Loading agents..."
+                          : selectedAgent?.name ??
+                            "Choose an Agent"}
+                      </div>
+                      <ChevronsUpDown className="size-4 opacity-50" />
+                    </Button>
+                  </FormControl>
+                </PopoverTrigger>
+
+                <PopoverContent className="p-0 w-full">
+                  <Command>
+                    <CommandInput
+                      placeholder="Search agents..."
+                      onValueChange={setAgentSearch}
+                    />
+                    <CommandList>
+                      <CommandEmpty>
+                        No agents found.
+                      </CommandEmpty>
+
+                      <CommandGroup>
+                        {agents.data?.items.map((agent) => (
+                          <CommandItem
+                            key={agent.id}
+                            onSelect={() => {
+                              field.onChange(agent.id);
+                              setAgentOpen(false);
+                            }}
+                            className="flex justify-between"
+                          >
+                            <div className="flex gap-2">
+                              <GeneratedAvatar
+                                seed={agent.name}
+                                className="size-6"
+                              />
+                              {agent.name}
+                            </div>
+                            <Check
+                              className={cn(
+                                "size-4",
+                                field.value === agent.id
+                                  ? "opacity-100"
+                                  : "opacity-0"
+                              )}
+                            />
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+
+                      <CommandSeparator />
+
+                      <CommandGroup>
+                        <CommandItem
+                          onSelect={() =>
+                            router.push("/agents/new")
+                          }
+                        >
+                          <Plus className="mr-2 size-4" />
+                          New Agent
+                        </CommandItem>
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+
+              <FormDescription className="text-xs">
+                Selected AI will manage the meeting.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {/* AGENT PREVIEW */}
         <AnimatePresence>
           {selectedAgent && (
             <motion.div
-              initial={{ opacity: 0, y: 10, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="relative overflow-hidden rounded-2xl border bg-gradient-to-br from-primary/5 to-transparent p-4 flex items-center gap-4 group"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              className="rounded-2xl border p-4 flex gap-4"
             >
-              <div className="absolute top-0 right-0 p-2 opacity-10">
-                 <Sparkles className="size-12 rotate-12" />
-              </div>
-              <GeneratedAvatar seed={selectedAgent.name} variant="botttsNeutral" className="size-12 rounded-xl shadow-lg ring-2 ring-background" />
-              <div className="flex flex-col">
-                <Badge variant="secondary" className="w-fit text-[9px] h-4 mb-1 uppercase font-black">Active Agent</Badge>
-                <span className="text-base font-black tracking-tight leading-none">{selectedAgent.name}</span>
-                <span className="text-xs text-muted-foreground mt-1 font-mono opacity-60">ID: {selectedAgent.id.slice(0,8)}...</span>
+              <GeneratedAvatar
+                seed={selectedAgent.name}
+                className="size-12"
+              />
+              <div>
+                <Badge className="mb-1 text-[10px]">
+                  Active Agent
+                </Badge>
+                <div className="font-bold">
+                  {selectedAgent.name}
+                </div>
               </div>
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* 4. ACTION BAR */}
-        <div className="flex flex-col-reverse sm:flex-row items-center justify-end gap-3 pt-2">
+        {/* ACTIONS */}
+        <div className="flex justify-end gap-3">
           {onCancel && (
             <Button
-              variant="ghost"
               type="button"
-              disabled={isPending}
+              variant="ghost"
               onClick={onCancel}
-              className="w-full sm:w-auto rounded-xl h-12 font-bold opacity-60 hover:opacity-100"
             >
-              Discard
+              Cancel
             </Button>
           )}
 
-          <Button 
-            disabled={isPending || isAgentsLoading} 
+          <Button
             type="submit"
-            className="w-full sm:w-auto h-12 rounded-xl px-8 font-black bg-primary text-primary-foreground shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all"
+            disabled={isPending || isAgentsLoading}
+            className="px-8"
           >
             {isPending ? (
-              <div className="flex items-center gap-2">
-                <Loader2 className="animate-spin size-4" />
-                <span>Processing...</span>
-              </div>
+              <>
+                <Loader2 className="mr-2 size-4 animate-spin" />
+                Processing
+              </>
+            ) : isEdit ? (
+              "Update Meeting"
             ) : (
-              <span>{isEdit ? "Synchronize Updates" : "Initialize Meeting"}</span>
+              "Create Meeting"
             )}
           </Button>
         </div>

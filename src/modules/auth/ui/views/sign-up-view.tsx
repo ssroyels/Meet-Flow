@@ -88,7 +88,7 @@ export const SignUpView = () => {
       {
         onSuccess: () => {
           setPending(false);
-          router.push("/dashboard");
+          router.push("/");
         },
         onError: ({ error }) => {
           setPending(false);
